@@ -1,7 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
-
-export const DEMO_USER_EMAIL = "demo@dealisreal.local";
+import { DEMO_USER_EMAIL } from "@/lib/demoUser";
 
 /**
  * The signed-in user. Until real auth lands (Phase 5) this is the seeded demo user.
