@@ -56,12 +56,26 @@ jobs/ (pg-boss worker + handlers)   ─┼─> services/   orchestration: DB + d
 ## Git workflow
 - Never commit to `main` directly. One feature branch per logical change: `feat/pN-<topic>`, `fix/...`, `docs/...`.
 - Small conventional commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`).
-- Before opening a PR: `npm run check && npm run build`. Open with `gh pr create`, merge with a merge commit, delete the branch.
+- Before opening a PR: `npm run check && npm run build`. Open with `gh pr create`.
+- **Never merge PRs** — the user reads and merges them. When new work depends on an unmerged branch,
+  branch from it and open a stacked PR (`gh pr create --base <previous-branch>`).
 - Stop for user review at the end of each phase.
 
 ## Phase status
-- [ ] Phase 1 – schema, seed with 1 year of fake history, watchlist + product detail pages
+- [ ] Phase 1 – schema, seed with ~1 year of fake history, watchlist + product detail pages
 - [ ] Phase 2 – deal scoring
 - [ ] Phase 3 – link resolver
 - [ ] Phase 4 – cross-retailer matching + providers
 - [ ] Phase 5 – text search + alerts
+
+## Data sources (decided 2026-11-22)
+- No paid API keys are available, so real data is **forward pricing only**: after the Phase 3 resolver
+  exists, a scheduled job re-fetches each watched listing's public page and appends a `PricePoint`.
+  History accumulates from the day a product is first watched.
+- Big retailers (Amazon/Walmart/Target/Best Buy) often block plain requests. A block is recorded and shown
+  to the user ("couldn't check this retailer"), never worked around.
+- **Later feature – Wayback Machine backfill:** best-effort, when a listing is added, look up archived
+  captures via the Internet Archive CDX API, run the resolver's extractors on each snapshot, and save
+  results as `PricePoint`s with `source: "wayback"`. Always report the outcome to the user
+  ("found N archived prices since <date>" or "no archived history"). Polite rate limit (~1 req/s).
+- Seed data (`prisma/seed/`) is fake and exists only for development and tests.
