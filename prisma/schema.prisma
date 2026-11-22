@@ -1,0 +1,117 @@
+// Data model for Deal Is Real. See CLAUDE.md for conventions.
+// Money is stored as integer minor units (cents) alongside an ISO 4217 currency code.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String          @id @default(cuid())
+  email     String          @unique
+  name      String?
+  createdAt DateTime        @default(now())
+  watchlist WatchlistItem[]
+}
+
+/// A store: a major retailer ("amazon") or a brand's own shop ("shop:allbirds.com").
+model Retailer {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  name     String
+  domain   String    @unique
+  listings Listing[]
+}
+
+/// Canonical, variant-specific product (e.g. "Sony WH-1000XM5, Black").
+model Product {
+  id                String          @id @default(cuid())
+  /// Normalized to 14 digits (GTIN-14); UPC-A / EAN-13 are left-padded with zeros.
+  gtin              String?         @unique
+  mpn               String?
+  brand             String?
+  name              String
+  category          String?
+  /// Links sibling variants of the same model (different color / size / capacity).
+  variantGroupKey   String?
+  /// e.g. { "color": "Black", "size": "10" }
+  variantAttributes Json?
+  imageUrl          String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  listings          Listing[]
+  watchers          WatchlistItem[]
+
+  @@index([brand, mpn])
+  @@index([variantGroupKey])
+}
+
+/// How a listing was attached to its product.
+enum MatchMethod {
+  SOURCE // the URL the user pasted
+  GTIN
+  BRAND_MPN
+  FUZZY_TITLE
+  MANUAL
+}
+
+enum ListingStatus {
+  ACTIVE
+  PENDING_CONFIRMATION // low-confidence match awaiting user confirmation
+  REJECTED
+}
+
+/// A product sold at a specific retailer.
+model Listing {
+  id                String        @id @default(cuid())
+  productId         String
+  retailerId        String
+  url               String
+  /// Retailer-specific ID: ASIN, Walmart item id, Target TCIN, Best Buy SKU, Shopify variant id.
+  retailerProductId String?
+  title             String?
+  matchMethod       MatchMethod   @default(SOURCE)
+  matchConfidence   Float         @default(1)
+  status            ListingStatus @default(ACTIVE)
+  lastCheckedAt     DateTime?
+  createdAt         DateTime      @default(now())
+  product           Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  retailer          Retailer      @relation(fields: [retailerId], references: [id])
+  prices            PricePoint[]
+
+  @@unique([retailerId, retailerProductId])
+  @@index([productId])
+}
+
+/// Append-only price observation for a listing.
+model PricePoint {
+  id             BigInt   @id @default(autoincrement())
+  listingId      String
+  priceCents     Int
+  currency       String   @db.Char(3)
+  inStock        Boolean
+  /// Retailer's claimed "was"/list price. Displayed only — NEVER used for deal scoring.
+  listPriceCents Int?
+  /// Where the observation came from: "seed", "mock", "keepa", "jsonld", ...
+  source         String
+  observedAt     DateTime
+  listing        Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, observedAt])
+}
+
+model WatchlistItem {
+  id               String   @id @default(cuid())
+  userId           String
+  productId        String
+  targetPriceCents Int?
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
