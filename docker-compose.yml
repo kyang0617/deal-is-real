@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: deal
+      POSTGRES_PASSWORD: deal
+      POSTGRES_DB: deal_is_real
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deal -d deal_is_real"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  # Local SMTP sink for alert emails (Phase 5). UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  pgdata:
