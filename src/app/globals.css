@@ -7,6 +7,14 @@
   --muted: #71717a;
   --border: #e4e4e7;
   --accent: #059669;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  /* categorical data-viz slots (validated palette, light) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -17,6 +25,13 @@
     --muted: #a1a1aa;
     --border: #27272a;
     --accent: #34d399;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
   }
 }
 
