@@ -42,6 +42,13 @@ jobs/ (pg-boss worker + handlers)   ─┼─> services/   orchestration: DB + d
 - **PricePoint** – append-only time series per listing: `priceCents`, `currency`, `inStock`, `listPriceCents` (display only), `source`, `observedAt`.
 - **WatchlistItem** – user + product + optional `targetPriceCents`.
 
+## Code map (Phase 1)
+- `prisma/seed/priceGen.ts` – deterministic fake price generator (BF/Cyber Monday, Prime Day, flash & fake sales, stockouts, inflated list prices); `prisma/seed/catalog.ts` – seed products/retailers; `prisma/seed.ts` – idempotent seed.
+- `src/domain/prices/summary.ts` – latest-per-listing, best in-stock offer, daily-min series, all-time low.
+- `src/services/watchlist.ts`, `src/services/products.ts` – DB queries shaped for pages.
+- `src/app/watchlist/page.tsx`, `src/app/products/[id]/page.tsx` – pages.
+- `src/components/PriceHistoryChart.tsx` (client, Recharts), `RetailerPriceTable.tsx`, `Sparkline.tsx`.
+
 ## Conventions
 - Money: integer minor units (`priceCents: number`) + ISO currency. Never floats. Helpers in `src/domain/money.ts`.
 - Time: store UTC `DateTime`; pure functions take `now` as a parameter instead of calling `new Date()`.
@@ -50,6 +57,10 @@ jobs/ (pg-boss worker + handlers)   ─┼─> services/   orchestration: DB + d
   and call `await connection()` first. Read `node_modules/next/dist/docs/` before using unfamiliar Next APIs.
 - Mutations go through Server Actions that call `services/`, then `revalidatePath`/`refresh`.
 - Current user: always via `getCurrentUser()` in `src/lib/currentUser.ts` (seeded demo user until auth lands).
+- Charts: each retailer has a fixed color slot (`src/components/retailerColors.ts` → `--series-N` in
+  `globals.css`, a CVD-validated palette with separate light/dark steps). Colors follow the retailer, never rank.
+  Charts with ≥2 series get a legend + direct labels; keep a table view alongside.
+- Dev gotcha: if new CSS variables don't show up, stop `next dev`, `rm -rf .next`, restart.
 - Fetching external pages: public pages only, honest User-Agent, timeouts; never bypass bot protection or CAPTCHAs.
   A block (403/429/captcha) is reported to the user, not worked around.
 
@@ -62,7 +73,7 @@ jobs/ (pg-boss worker + handlers)   ─┼─> services/   orchestration: DB + d
 - Stop for user review at the end of each phase.
 
 ## Phase status
-- [ ] Phase 1 – schema, seed with ~1 year of fake history, watchlist + product detail pages
+- [x] Phase 1 – schema, seed with ~1 year of fake history, watchlist + product detail pages (awaiting review)
 - [ ] Phase 2 – deal scoring
 - [ ] Phase 3 – link resolver
 - [ ] Phase 4 – cross-retailer matching + providers
