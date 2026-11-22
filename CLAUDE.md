@@ -56,7 +56,9 @@ jobs/ (pg-boss worker + handlers)   ─┼─> services/   orchestration: DB + d
 ## Git workflow
 - Never commit to `main` directly. One feature branch per logical change: `feat/pN-<topic>`, `fix/...`, `docs/...`.
 - Small conventional commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`).
-- Before opening a PR: `npm run check && npm run build`. Open with `gh pr create`, merge with a merge commit, delete the branch.
+- Before opening a PR: `npm run check && npm run build`. Open with `gh pr create`.
+- **Never merge PRs** — the user reads and merges them. When new work depends on an unmerged branch,
+  branch from it and open a stacked PR (`gh pr create --base <previous-branch>`).
 - Stop for user review at the end of each phase.
 
 ## Phase status
